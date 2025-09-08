@@ -1,0 +1,101 @@
+{
+  "name": "shikamaru",
+  "version": "1.0.0-beta.0",
+  "description": "A powerful CLI tool for managing multi-repository development environments with intelligent environment configuration, port management, and Docker integration",
+  "main": "dist/index.js",
+  "bin": {
+    "maru": "./dist/bin/shikamaru.js",
+    "shikamaru": "./dist/bin/shikamaru.js"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "clean": "rimraf dist",
+    "copy:assets": "node copy-assets.js",
+    "build:react": "npm --prefix src/react-log-viewer run build",
+    "build": " npm run clean && npm run build:react && tsc && tsc-alias && npm run copy:assets && chmod +x dist/bin/shikamaru.js",
+    "start": "export NODE_ENV=production && node dist/index.js",
+    "dev": "ts-node -r tsconfig-paths/register src/index.ts",
+    "watch:build": "concurrently \"tsc -w\" \"tsc-alias -w\"",
+    "watch:start": "nodemon dist/index.js",
+    "watch": "npm-run-all --parallel watch:build watch:start",
+    "test": "echo \"No tests specified\" && exit 0",
+    "test:watch": "npm test -- --watch",
+    "lint": "echo \"No linter configured\" && exit 0",
+    "lint:fix": "npm run lint -- --fix",
+    "prepublishOnly": "npm run build"
+  },
+  "publishConfig": {
+    "tag": "beta"
+  },
+  "keywords": [
+    "cli",
+    "env",
+    "dotenv",
+    "postgres",
+    "rabbitmq",
+    "redis",
+    "timescaledb",
+    "devtools",
+    "development",
+    "environment",
+    "docker"
+  ],
+  "author": "Ibrahim masry",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ibrahimasry/shikamaru.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ibrahimasry/shikamaru/issues"
+  },
+  "homepage": "https://github.com/ibrahimasry/shikamaru#readme",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/ibrahimasry/shikamaru"
+  },
+  "dependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "ansi-to-html": "^0.7.2",
+    "chalk": "^5.5.0",
+    "concurrently": "^9.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^5.1.0",
+    "inquirer": "^8.2.6",
+    "inquirer-checkbox-plus-prompt": "^1.4.2",
+    "js-yaml": "^4.1.0",
+    "rimraf": "^6.0.1",
+    "socket.io": "^4.8.1",
+    "ws": "^8.18.3"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/inquirer": "^9.0.9",
+    "@types/node": "^24.2.1",
+    "@types/socket.io": "^3.0.1",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.2"
+  }
+}

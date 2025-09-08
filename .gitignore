@@ -1,0 +1,48 @@
+# Node.js
+node_modules/
+dist/
+build/
+.nyc_output/
+coverage/
+.env
+.env.*           # Optional: .env.development, .env.production
+*.local          # E.g., .env.local, config.local.js
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# pnpm
+.pnpm-debug.log*
+.pnpm-store/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.sw?
+*.swo
+
+# Docker
+.docker/
+*.pid
+*.sock
+
+# TypeScript
+*.tsbuildinfo
+
+# Optional: PM2 or logs
+
+*.log
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Optional: Test output
+jest/
+test-results/
+.shikamaru-profiles

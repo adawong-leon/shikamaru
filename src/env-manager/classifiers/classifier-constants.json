@@ -1,0 +1,50 @@
+{
+  "backendIndicators": ["nest-cli.json", "nest.json"],
+  "backendPackages": [
+    "@nestjs/core",
+    "@nestjs/common",
+    "@nestjs/platform-express",
+    "@nestjs/typeorm",
+    "@nestjs/mongoose",
+    "@nestjs/passport",
+    "@nestjs/jwt",
+    "@nestjs/config",
+    "@nestjs/swagger",
+    "@nestjs/terminus",
+    "@nestjs/bull",
+    "@nestjs/bull-board",
+    "@nestjs/schedule",
+    "@nestjs/microservices",
+    "nestjs"
+  ],
+  "databasePackages": [
+    "mysql2",
+    "mysql",
+    "pg",
+    "postgres",
+    "postgresql",
+    "sqlite3",
+    "better-sqlite3",
+    "mariadb",
+    "oracledb",
+    "mssql",
+    "tedious",
+    "sql.js",
+    "typeorm",
+
+    "prisma",
+
+    "waterline",
+    "doctrine",
+    "mongodb",
+    "redis",
+    "ioredis",
+    "memcached",
+    "cassandra-driver",
+    "amqplib",
+    "rabbitmq",
+    "kafka-node",
+    "kafkajs",
+    "bull"
+  ]
+}
