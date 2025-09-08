@@ -1,229 +1,194 @@
 # 🚀 shikamaru CLI
 
-> **Spin up multi-repo dev environments** with **env management**, **port allocation**, **Docker/Hybrid orchestration**, and **real-time log streaming** via terminal or web UI.
+> **Spin up multi-repo dev environments** with **env management**, **port allocation**, **Docker/Hybrid orchestration**, and **real-time log streaming** (terminal & web UI).
 
 [![npm version](https://img.shields.io/npm/v/shikamaru.svg?style=flat)](https://www.npmjs.com/package/shikamaru) ![Node >=16](https://img.shields.io/badge/node-%3E%3D16-green) ![Docker required](https://img.shields.io/badge/docker-required-blue) ![Status](https://img.shields.io/badge/status-beta-yellow)
 
 ---
 
-## 📑 Table of Contents
+## 📑 Contents
 
 - [Overview](#overview)
-- [Installation](#-installation)
-- [Quick Start](#-quick-start)
-- [Commands](#-commands)
-- [Configuration](#-configuration)
-- [Environment management](#-environment-management)
-- [Infra decision matrix: Docker vs external](#-infra-decision-matrix-docker-vs-external)
-- [Port management](#-port-management)
-- [Execution modes](#-execution-modes)
-- [Logging and the web UI](#-logging-and-the-web-ui)
-- [Troubleshooting](#-troubleshooting)
-- [Contributing](#-contributing)
-- [License](#-license)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Commands](#commands)
+- [Profiles & Project Discovery](#profiles--project-discovery)
+- [Configuration](#configuration)
+- [Environment Management](#environment-management)
+- [Infra: Docker vs External](#infra-docker-vs-external)
+- [Port Management](#port-management)
+- [Execution Modes](#execution-modes)
+- [Logging & Web UI](#logging--web-ui)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
 ## 🔎 Overview
 
-shikamaru CLI helps developers run **multi-service environments** locally or in Docker with:
+**shikamaru** makes local dev across multiple services painless:
 
-- 📂 **Repo discovery & selection** (interactive prompts)
-- ⚙️ **`.env` auto-generation** from `.env.example` templates
-- 🔌 **Port allocation & conflict resolution** (persisted per profile)
-- 🐳 **Docker & Hybrid orchestration**
-- 📡 **Terminal or Web log viewer** (Express + Socket.IO)
+- 📂 Auto-detect & select repos
+- ⚙️ Generate `.env` from `.env.example`
+- 🔌 Assign ports & avoid conflicts
+- 🐳 Run in **local**, **docker**, or **hybrid** mode
+- 📡 Stream logs in terminal or web UI
 
 **Requirements**
 
 - Node.js ≥ 16
 - npm ≥ 8
-- Docker (for `docker` / `hybrid` modes)
+- Docker (for docker/hybrid modes)
 
 ---
 
 ## 🧩 Installation
 
-You can use the CLI directly from this repository or install it globally.
-
-### Prerequisites
-
-- Node.js >= 16
-- Docker (for Docker/hybrid modes)
-
-### Global (recommended)
-
 ```bash
+# Global (recommended)
 npm install -g shikamaru
-```
 
-### Local (from repo)
-
-```bash
+# Local (from repo)
 npm install
 npm run build
 npm start
 ```
 
+---
+
 ## 🚀 Quick Start
 
-1. In your projects directory, create a `global.env` , `frontend.global.env` with required env values across selected backend/frontend services.
-   and To load Azure variable groups, include the following (if applicable):
+1. In your workspace, add `global.env` (backend vars) and `frontend.global.env` (frontend vars).  
+   To load Azure variable groups, set:
 
-```bash
-ORG=
-PROJECT=
-AZURE_PERSONAL_ACCESS_TOKEN=
-```
+   ```bash
+   ORG=
+   PROJECT=
+   AZURE_PERSONAL_ACCESS_TOKEN=
+   ```
 
-2. Run the CLI from your projects root:
+2. Run from your projects root:
 
-```bash
-cd ~/workspace/company
-maro start
-```
+   ```bash
+   maru start
+   ```
 
-What happens:
+3. The CLI will:
+   - Check environment (Node, Docker, etc.)
+   - Prompt repo & mode selection
+   - Allocate/reuse ports
+   - Generate `.env` files
+   - Start services & log viewer
 
-1. Environment validation (Node, Docker availability, basic checks)
-2. Interactive selection of repositories and execution mode (local | docker | hybrid)
-   - the tool detects default start and build/install commands from dockerfile
-   - the user could overwrite any command for any repo to be run with
-3. Ports allocation or reuse with conflict resolution (saved to a file)
-4. Env generation per repo from `.env.example`
-5. Service execution and logging setup (terminal or web UI)
-
-Open the web UI when prompted, or watch logs in the terminal (based on selection).
+👉 Open the provided web URL or watch logs in terminal.
 
 ---
 
 ## 🛠️ Commands
 
-- start: Start the development environment
-- profile: Manage saved profiles (list/show/delete/clear)
-- help: Show usage help
-- version: Show CLI version
+| Command   | Description                  |
+| --------- | ---------------------------- |
+| `start`   | Start selected repos & infra |
+| `profile` | Manage saved profiles        |
+| `help`    | Show help                    |
+| `version` | Show CLI version             |
 
-Note: Some help text may mention future commands like `logs`, `status`, or `monitor` – these are not enabled in this version.
+**Global Options**
 
-### Global options
-
-- -v, --verbose: Verbose logging
-- --projects-dir <path>: Base directory containing your repositories (default: current directory or `PROJECTS_DIR`)
-- --skip-cloud: Skip loading variables from cloud providers (e.g., Azure) and skip tier prompts
-- -p, --profile <name>: Load a saved profile by name and skip interactive selection
-
-Environment variables:
-
-- PROJECTS_DIR: Base directory for project discovery
+- `-v, --verbose` → verbose logging
+- `--projects-dir <path>` → base directory (default: `PROJECTS_DIR` or cwd)
+- `--skip-cloud` → ignore Azure/cloud vars
+- `-p, --profile <name>` → reuse a saved profile
 
 Examples:
 
 ```bash
-maru start --projects-dir /path/to/projects
 maru start --verbose
+maru start --projects-dir ~/workspace
 maru start --skip-cloud
-maru start --profile "my-team"
+maru start --profile "frontend+api"
 ```
 
 ---
 
-## Project discovery and profiles
+## 📂 Profiles & Project Discovery
 
-The CLI scans your `--projects-dir` (or `PROJECTS_DIR`) for repositories you want to include. It walks you through selecting repos and choosing an execution mode for each (local | docker | hybrid, plus global defaults).
+- CLI scans `--projects-dir` for repos
+- You pick repos & modes (local / docker / hybrid)
+- Save as a **profile** for reuse
 
-You can save these choices as a profile and reuse them with `--profile <name>`.
+Profiles include:
 
-Profiles capture:
-
-- Selected repositories
-- Cloud loading preference (skip or not)
-- Execution modes (per repo and global)
-- Logging mode (web or terminal)
-- Port reuse preference
-
----
-
-## Configuration
-
-The configuration is managed internally via a unified configuration model. Most users configure through the interactive prompts, but these are the core concepts:
-
-- Global mode: `local` | `docker` | `hybrid`
-- Projects directory: where your repositories live
-- Repo configs: execution mode per repo (override global)
-- Logging config: `web` or `terminal`
-- Health checks and auto-stop (where applicable)
-- Docker compose generation options
-
-You’ll see the effect of your choices reflected in:
-
-- Generated `.env` files in each selected repo
-- A persisted ports map for consistent port allocations
-- A generated unified Docker Compose file when Docker/hybrid is selected
+- Selected repos
+- Cloud env usage (on/off)
+- Execution modes
+- Logging mode (web/terminal)
+- Port allocations
 
 ---
 
-## 🌱 Environment management
+## ⚙️ Configuration
 
-The Env Manager resolves variables to produce a real `.env` for each repo based on its `.env.example`.
+Configuration is interactive. Under the hood, it manages:
 
-Sources it can use:
+- Execution mode: `local` | `docker` | `hybrid`
+- Projects dir
+- Per-repo overrides
+- Logging (terminal / web)
+- Docker compose generation
+- Health checks & auto-stop
 
-- Global backend/front variables:
-  - `global.env` (backend-only variables)
-  - `global.frontend.env` (frontend variables)
-    Place these files at the root of your `projectsDir`.
-- Cloud providers: Azure provider(s). Disable with `--skip-cloud`.
-- Local values override cloud when both are present.
-- Smart defaults for common services (Postgres, TimescaleDB, Redis, RabbitMQ). For example, when it detects internal/local settings, it applies safe local defaults like:
-  - Postgres at `postgres:5432`
-  - TimescaleDB at `timescaledb:5432`
-  - Redis connections pointing to `localhost:6379`
-  - RabbitMQ at `localhost:5672`
+Artifacts:
 
-Output:
-
-- For each selected repo with `.env.example`, a `.env` file is generated in that repo directory.
-
-Tips:
-
-- If a repo has no `.env.example`, it’s skipped with a warning.
-- Use `--skip-cloud` for fully-local development with only local defaults and your `global.env` files.
+- `.env` files per repo
+- `ports-map.json` (stable allocations)
+- `docker-compose.unified.yml` (docker/hybrid)
 
 ---
 
-## 🧠 Infra decision matrix: Docker vs external
+## 🌱 Environment Management
 
-When deciding whether to spin up databases/queues in Docker or use external endpoints, the tool infers intent from your resolved environment (global.env, cloud providers, `.env.example` values) and sets an internal services set. A service is provisioned in Docker only when it is classified as internal for both Local and Cloud sources.
+Env files are built from:
 
-| Service     | Keys evaluated (examples)                                                                                                                                          | Internal when… (host)                                                                                 | External when… (host)                                          | Provisioned in Docker when…              | External example                                   | Docker default example                                                             |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Postgres    | `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USERNAME`, `POSTGRES_PASSWORD`, `POSTGRES_DATABASE`, `DATABASE_URL`                                                    | Host is empty/whitespace, `localhost`, `127.0.0.1`, `::1`, or contains `internal`, `local`, `cluster` | Host clearly points outside local/docker (corp, cloud, SaaS)   | Both Local and Cloud resolve as internal | `postgresql://user:pass@corp-db.acme.com:5432/app` | `postgresql://default_user:default_password@postgres:5432/default_db`              |
-| TimescaleDB | `POSTGRES_TIMESCALE_HOST`, `POSTGRES_TIMESCALE_PORT`, `POSTGRES_TIMESCALE_USERNAME`, `POSTGRES_TIMESCALE_PASSWORD`, `POSTGRES_TIMESCALE_DATABASE`, `TIMESCALE_URL` | Same internal rules                                                                                   | Same external rules                                            | Both Local and Cloud resolve as internal | `postgresql://u:p@ts-prod.example.net:5432/tsdb`   | `postgresql://default_user:default_password@timescaledb:5432/default_timescale_db` |
-| Redis       | Any `*_REDIS_CONNECTION_URL`, `REDIS_CONNECTION_URL`, `REDIS_HOST`, `REDIS_PORT`                                                                                   | Same internal rules                                                                                   | Host/URL is `redis.example.com`, `rediss://...`, VPC endpoints | Both Local and Cloud resolve as internal | `redis://redis.use1.cache.amazonaws.com:6379`      | `redis://redis:6379`                                                               |
-| RabbitMQ    | `RABBITMQ_HOSTNAME`, `RABBITMQ_PORT`, `RABBITMQ_USERNAME`, `RABBITMQ_PASSWORD`, `RABBITMQ_URL`                                                                     | Same internal rules                                                                                   | Host/URL is managed/SaaS MQ, corp hostname                     | Both Local and Cloud resolve as internal | `amqp://user:pass@mq.company.local:5672`           | `amqp://guest:guest@rabbitmq:5672`                                                 |
+1. **Global files**:
+   - `global.env` (backend)
+   - `frontend.global.env` (frontend)
+2. **Cloud vars**: (Azure, optional)
+3. **Local defaults** for infra:
+   - Postgres → `postgres:5432`
+   - TimescaleDB → `timescaledb:5432`
+   - Redis → `localhost:6379`
+   - RabbitMQ → `localhost:5672`
 
-Notes:
-
-- Precedence: cloud providers and `global.env` override `.env.example` defaults. If those resolve to external endpoints, the service is considered external and won’t be added to Docker compose.
-- Local defaults: when values look empty, internal, or explicitly docker-hosted (e.g., `postgres`, `timescaledb`, `redis`, `rabbitmq`), the service is marked internal and added to compose with health checks.
-- Hybrid/local modes: only required infra is started. Externalized services are assumed to be reachable and are not provisioned in Docker.
-- Forcing behavior:
-  - Force external: set the relevant host/URL to your managed endpoint in `global.env` or cloud.
-  - Force Docker: leave host empty/whitespace or use the internal docker hostnames shown above (e.g., `postgres`, `timescaledb`, `redis`, `rabbitmq`).
+➡️ Local values always override cloud.  
+➡️ If `.env.example` missing → skipped with warning.
 
 ---
 
-## 🔌 Port management
+## 🧠 Infra: Docker vs External
 
-Ports are allocated per service to avoid conflicts and persisted for stability between runs.
+shikamaru decides whether to spin up infra in Docker:
 
-- Default range: 4000–5000 (host)
-- Internal port (container/app): defaults to 3000 unless inferred per mode
-- Persistence file: saved as `ports-map.json` in your `projectsDir`
-- Validates for conflicts and can auto-resolve
+| Service     | Provisioned in Docker when host is… | Example Docker default                                        |
+| ----------- | ----------------------------------- | ------------------------------------------------------------- |
+| Postgres    | empty / localhost / `postgres`      | `postgresql://default_user:default_password@postgres:5432`    |
+| TimescaleDB | empty / localhost / `timescaledb`   | `postgresql://default_user:default_password@timescaledb:5432` |
+| Redis       | empty / localhost / `redis`         | `redis://redis:6379`                                          |
+| RabbitMQ    | empty / localhost / `rabbitmq`      | `amqp://guest:guest@rabbitmq:5672`                            |
 
-Example persisted file format (simplified):
+To force external: set a real host (corp/cloud).  
+To force Docker: leave host blank or use docker hostname.
+
+---
+
+## 🔌 Port Management
+
+- Host ports allocated in **4000–5000** range
+- Stable across runs via `ports-map.json`
+- Auto-resolves conflicts
+
+Example `ports-map.json`:
 
 ```json
 [
@@ -236,78 +201,56 @@ Example persisted file format (simplified):
 ]
 ```
 
-If you prefer reusing previous allocations, choose port reuse when prompted; otherwise, a fresh allocation will be generated.
+---
+
+## 🚦 Execution Modes
+
+- **Local** → runs services on host
+- **Docker** → unified compose file for all
+- **Hybrid** → some local, some docker
+
+When Docker/hybrid:
+
+1. Detects Dockerfiles
+2. Generates `docker-compose.unified.yml`
+3. Starts infra + services with health checks
+4. Streams logs
+
+Stopping brings everything down cleanly.
 
 ---
 
-## 🚦 Execution modes
+## 📺 Logging & Web UI
 
-You can run repos locally, in Docker, or mix them in hybrid mode.
+- **Terminal** → colored logs, interactive
+- **Web** → Express + Socket.IO + React UI
 
-- Local: Runs your apps on the host, using allocated ports
-- Docker: Generates a unified compose with app services + required infra
-- Hybrid: Some repos local, some in Docker; infra is in Docker as needed
+Web UI features:
 
-### Unified Docker Compose workflow
+- Live log stream
+- Filters (service, level, search)
+- Pause / resume / clear
+- Stats per service
 
-When Docker/hybrid is selected, the CLI:
-
-1. Detects Dockerfiles in repos configured for Docker mode
-2. Generates a single `docker-compose.unified.yml` in the current working directory
-3. Builds and starts services, printing progress with health checks
-4. Streams Docker logs to the logging subsystem
-
-Infra services are added on-demand (e.g., Redis, RabbitMQ, Postgres, TimescaleDB) with health checks. Application services depend on infra health when present.
-
-Stopping services will gracefully bring down the unified compose.
-
----
-
-## 📺 Logging and the web UI
-
-There are two logging modes:
-
-- Web: Launches an Express server with Socket.IO and serves the React UI
-- Terminal: Streams colored logs in an interactive terminal viewer
-
-When web logging is enabled, the Express API serves the UI and a Socket.IO endpoint:
-
-- Web UI: printed as `http://localhost:<port>` (defaults to 3015, increments if busy)
-- Socket.IO: `http://localhost:<port>/socket.io`
-
-The web app provides:
-
-- Real-time log stream with virtualization
-- Filters by service, level, and search
-- Pause/resume, clear, and per-service stats
-
-You can also develop the React app independently under `src/react-log-viewer`:
-
-```bash
-cd src/react-log-viewer
-npm install
-npm run dev
-# Optionally set VITE_BACKEND_URL to the Express server URL
-```
+Default: `http://localhost:3001` (auto-increments if busy).
 
 ---
 
 ## 🧯 Troubleshooting
 
-- Node.js: Ensure Node >= 16 (`node -v`)
-- Docker: Verify Docker is running and you have permission to use it
-- Ports: If a port conflict occurs, the server will attempt the next port automatically
-- Compose errors: Review CLI output; common issues include missing Dockerfiles, image pulls, or permission errors
-- Cloud variables: Use `--skip-cloud` to force local defaults
+- Ensure Node ≥ 16, Docker running
+- Port conflicts → CLI retries next available
+- Compose errors → check Dockerfiles, permissions
+- For fully local env → `--skip-cloud`
 
 ---
 
 ## 🤝 Contributing
 
-PRs and issues are welcome. Keep code readable and modular.
+PRs/issues welcome. Keep code modular & clean.
 
 ---
 
 ## 📄 License
 
-MIT © 2025 
+MIT © 2025
