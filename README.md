@@ -120,10 +120,10 @@ Environment variables:
 Examples:
 
 ```bash
-maro start --projects-dir /path/to/projects
-maro start --verbose
-maro start --skip-cloud
-maro start --profile "my-team"
+maru start --projects-dir /path/to/projects
+maru start --verbose
+maru start --skip-cloud
+maru start --profile "my-team"
 ```
 
 ---
@@ -310,4 +310,4 @@ PRs and issues are welcome. Keep code readable and modular.
 
 ## 📄 License
 
-MIT ©
+MIT © 2025 
