@@ -82,6 +82,11 @@ export interface PromptsState {
   skipProfileSave?: boolean;
 }
 
+export interface RepoInfo {
+  hasDockerfile: boolean;
+  language: string | null;
+}
+
 export interface ValidationResult {
   valid: boolean;
   errors: string[];

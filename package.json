@@ -1,6 +1,6 @@
 {
   "name": "shikamaru",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "description": "A powerful CLI tool for managing multi-repository development environments with intelligent environment configuration, port management, and Docker integration",
   "main": "dist/index.js",
   "bin": {
@@ -26,7 +26,9 @@
     "test:watch": "npm test -- --watch",
     "lint": "echo \"No linter configured\" && exit 0",
     "lint:fix": "npm run lint -- --fix",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "docs:gif": "vhs docs/shikamaru-demo.tape -o docs/shikamaru-demo.gif",
+    "docs:svg": "vhs docs/shikamaru-demo.tape -o docs/shikamaru-demo.svg"
   },
   "publishConfig": {
     "tag": "beta"
@@ -62,6 +64,7 @@
     "@types/js-yaml": "^4.0.9",
     "ansi-to-html": "^0.7.2",
     "chalk": "^5.5.0",
+    "fuse.js": "^7.0.0",
     "concurrently": "^9.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

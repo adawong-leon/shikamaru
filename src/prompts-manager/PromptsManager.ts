@@ -19,6 +19,7 @@ import type {
   UnifiedExecutionConfig,
   RepoConfig,
   LoggingConfig,
+  RepoInfo,
 } from "./types";
 import { UnifiedConfig } from "../config/UnifiedConfig";
 
@@ -51,6 +52,7 @@ export class PromptsManager {
   private validator: RepoValidator;
   private profileManager: ProfileManager | null = null;
   private isInitialized = false;
+  private repoInfoCache: Map<string, RepoInfo> = new Map();
 
   constructor(config: PromptsManagerConfig) {
     this.config = {
@@ -1390,6 +1392,16 @@ export class PromptsManager {
       this.state.discoveredRepos = dirs;
       this.metrics.reposDiscovered = dirs.length;
 
+      // Pre-compute and cache repo info for richer labels
+      for (const repo of dirs) {
+        try {
+          const repoPath = path.join(this.config.projectsDir, repo);
+          this.repoInfoCache.set(repo, this.detectRepoInfo(repoPath));
+        } catch {
+          // ignore metadata errors for robustness
+        }
+      }
+
       if (dirs.length === 0) {
         throw new PromptsError(
           "No repos with .env.example found",
@@ -1430,7 +1442,7 @@ export class PromptsManager {
       const promptConfig: any = {
         type: promptType,
         name: "picked",
-        message: `Select repos (minimum ${this.config.minRepos}, maximum ${this.config.maxRepos}):`,
+        message: `Select repos (multi-select: space to toggle, enter to confirm) — min ${this.config.minRepos}, max ${this.config.maxRepos}:`,
         pageSize: this.config.pageSize,
         validate: (input: RepoChoice[]) => {
           if (!input || input.length === 0) {
@@ -1449,14 +1461,18 @@ export class PromptsManager {
       if (promptType === "checkbox-plus") {
         promptConfig.searchable = true;
         promptConfig.highlight = true;
+        // Use fuzzy search for better UX
+        const Fuse = (await import("fuse.js")).default;
+        const fuse = new Fuse(this.state.discoveredRepos, {
+          includeScore: true,
+          threshold: 0.4,
+          ignoreLocation: true,
+        });
         promptConfig.source = async (_answers: unknown, input: string) => {
-          const term = (input || "").toLowerCase();
-          const filtered = term
-            ? this.state.discoveredRepos.filter((d) =>
-                d.toLowerCase().includes(term)
-              )
-            : this.state.discoveredRepos;
-          return this.toChoices(filtered);
+          const term = (input || "").trim();
+          if (!term) return this.toChoices(this.state.discoveredRepos);
+          const results = fuse.search(term).map((r) => r.item);
+          return this.toChoices(results);
         };
       } else {
         promptConfig.choices = this.toChoices(this.state.discoveredRepos);
@@ -1520,11 +1536,76 @@ export class PromptsManager {
     const cols = process.stdout?.columns || 120;
     const maxLabel = Math.max(18, Math.min(80, cols - 10));
 
-    return items.map((name) => ({
-      name: this.ellipsize(name, maxLabel),
-      short: name,
-      value: { kind: "repo", name },
-    }));
+    return items.map((name) => {
+      const info = this.repoInfoCache.get(name) || null;
+      const badges: string[] = [];
+      if (info?.hasDockerfile) badges.push("🐳");
+      if (info?.language) badges.push(this.languageBadge(info.language));
+      const decorated = badges.length ? `${badges.join(" ")} ${name}` : name;
+      return {
+        name: this.ellipsize(decorated, maxLabel),
+        short: name,
+        value: { kind: "repo", name },
+      };
+    });
+  }
+
+  private languageBadge(language: string): string {
+    switch (language) {
+      case "typescript":
+        return "🟦 TS";
+      case "javascript":
+        return "🟨 JS";
+      case ".net":
+        return "🌐 .NET";
+      case "go":
+        return "🐹 Go";
+      case "java":
+        return "☕ Java";
+      case "python":
+        return "🐍 Py";
+      case "rust":
+        return "🦀 Rust";
+      case "php":
+        return "🐘 PHP";
+      case "ruby":
+        return "💎 Ruby";
+      default:
+        return language;
+    }
+  }
+
+  private detectRepoInfo(repoPath: string): RepoInfo {
+    const hasDockerfile = fs.existsSync(path.join(repoPath, "Dockerfile"));
+    // Language heuristics
+    const isNode = fs.existsSync(path.join(repoPath, "package.json"));
+    const hasTs = fs.existsSync(path.join(repoPath, "tsconfig.json"));
+    const isGo = fs.existsSync(path.join(repoPath, "go.mod"));
+    const isDotNet = fs
+      .readdirSync(repoPath)
+      .some((f) => f.endsWith(".csproj") || f.endsWith(".sln"));
+    const isJava =
+      fs.existsSync(path.join(repoPath, "pom.xml")) ||
+      fs.existsSync(path.join(repoPath, "build.gradle")) ||
+      fs.existsSync(path.join(repoPath, "build.gradle.kts"));
+    const isPython =
+      fs.existsSync(path.join(repoPath, "pyproject.toml")) ||
+      fs.existsSync(path.join(repoPath, "requirements.txt"));
+    const isRust = fs.existsSync(path.join(repoPath, "Cargo.toml"));
+    const isPHP = fs.existsSync(path.join(repoPath, "composer.json"));
+    const isRuby = fs.existsSync(path.join(repoPath, "Gemfile"));
+
+    let language: string | null = null;
+    if (isNode) language = hasTs ? "typescript" : "javascript";
+    else if (isGo) language = "go";
+    else if (isDotNet) language = ".net";
+    else if (isJava) language = "java";
+    else if (isPython) language = "python";
+    else if (isRust) language = "rust";
+    else if (isPHP) language = "php";
+    else if (isRuby) language = "ruby";
+
+    return { hasDockerfile, language };
   }
 
   private ellipsize(str: string, max: number): string {
