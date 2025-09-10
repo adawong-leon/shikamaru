@@ -7,6 +7,7 @@ import { StartCommand } from "./commands/StartCommand";
 import { HelpCommand } from "./commands/HelpCommand";
 import { VersionCommand } from "./commands/VersionCommand";
 import { ProfileCommand } from "./commands/ProfileCommand";
+import { EnvCommand } from "./commands/EnvCommand";
 import { CliError } from "./errors/CliError";
 import { GlobalConfig } from "./config/GlobalConfig";
 import type { CliConfig, ParsedArgs } from "./types";
@@ -68,6 +69,11 @@ export class Shikamaru {
       case "start":
         const startCommand = new StartCommand(this.logger, this.config);
         await startCommand.execute();
+        break;
+
+      case "env":
+        const envCommand = new EnvCommand(this.logger, this.config);
+        await envCommand.execute();
         break;
 
       case "help":

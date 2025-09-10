@@ -128,7 +128,6 @@ export class InfraServiceManager {
   ): Promise<void> {
     try {
       const composeConfig: DockerComposeConfig = {
-        version: "3.9",
         services: {},
         networks: {
           devnet3: {
@@ -244,8 +243,7 @@ export class InfraServiceManager {
   }
 
   private formatComposeFile(config: DockerComposeConfig): string {
-    return `version: "${config.version}"
-
+    return `
 services:
 ${Object.entries(config.services)
   .map(([name, service]) => this.formatService(name, service))

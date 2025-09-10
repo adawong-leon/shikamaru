@@ -11,6 +11,7 @@ Usage: shikamaru <command> [options]
 
 Commands:
   start     Start the development environment (default)
+  env       Generate .env files only (no services start)
   profile   Manage saved profiles (list, show, delete)
   logs      View logs from running services
   status    Check status of running services
@@ -25,15 +26,17 @@ Options:
   --skip-azure        Skip Azure variable loading (deprecated, use --skip-cloud instead)
 
 Examples:
-  shikamaru start
-  shikamaru start --verbose
-  shikamaru start --profile "my-profile"
-  shikamaru start --projects-dir /path/to/projects
-  shikamaru start --skip-cloud
-  shikamaru profile
-  shikamaru logs
-  shikamaru status
-  shikamaru monitor
+  maru start
+  maru start --verbose
+  maru start --profile "my-profile"
+  maru start --projects-dir /path/to/projects
+  maru start --skip-cloud
+  maru env --projects-dir /path/to/projects
+  maru env --skip-cloud
+  maru profile
+  maru logs
+  maru status
+  maru monitor
 
 Environment Variables:
   PROJECTS_DIR        Base directory for projects (overrides default: ../)

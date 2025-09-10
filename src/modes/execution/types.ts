@@ -70,7 +70,6 @@ export type InfraServiceType =
   | "rabbitmq";
 
 export interface DockerComposeConfig {
-  version: string;
   services: Record<string, any>;
   networks?: Record<string, any>;
   volumes?: Record<string, any>;

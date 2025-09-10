@@ -1,5 +1,6 @@
 // Argument Parser
 
+import path from "path";
 import type { ParsedArgs, CliOptions } from "../types";
 
 export class ArgumentParser {
@@ -32,7 +33,12 @@ export class ArgumentParser {
 
         case "--projects-dir":
           if (i + 1 < args.length) {
-            options.projectsDir = args[++i];
+            const projectsDir = args[++i];
+            if (!projectsDir.startsWith("~")) {
+              options.projectsDir = path.resolve(process.cwd(), projectsDir);
+            } else {
+              options.projectsDir = projectsDir;
+            }
           } else {
             throw new Error("--projects-dir requires a path argument");
           }
@@ -67,7 +73,7 @@ export class ArgumentParser {
   }
 
   static validateCommand(command: string): boolean {
-    const validCommands = ["start", "help", "version", "profile"];
+    const validCommands = ["start", "help", "version", "profile", "env"];
     return validCommands.includes(command);
   }
 

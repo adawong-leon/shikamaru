@@ -163,7 +163,6 @@ export class DockerComposeManager {
     try {
       // Create unified compose configuration
       const unifiedCompose: any = {
-        version: "3.9",
         services: {},
         networks: {
           devnet3: {
