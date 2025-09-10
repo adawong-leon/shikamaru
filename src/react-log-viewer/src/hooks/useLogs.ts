@@ -1,11 +1,9 @@
 import { useState, useCallback } from "react";
 import { LogEntry, LogStats, LogFilters } from "../types";
 import { filterLogs } from "../utils/logUtils";
-import { TerminalLogger } from "../services/TerminalLogger";
 import {
   LoggingConfig,
   loadLoggingConfig,
-  isTerminalLoggingEnabled,
   isWebUiLoggingEnabled,
   shouldLog,
 } from "../config/logging";
@@ -34,11 +32,6 @@ export const useLogs = (): UseLogsReturn => {
   const [loggingConfig, setLoggingConfig] =
     useState<LoggingConfig>(loadLoggingConfig);
   const [isLoggingEnabled, setIsLoggingEnabled] = useState(true);
-
-  const terminalLogger = useCallback(
-    () => new TerminalLogger(loggingConfig),
-    [loggingConfig]
-  );
 
   // Initialize logs from localStorage or empty array
   const [logs, setLogs] = useState<LogEntry[]>(() => {
@@ -149,15 +142,6 @@ export const useLogs = (): UseLogsReturn => {
       console.log("Adding log:", log);
       console.log("Log HTML content:", log.html);
 
-      // Check if we should log to terminal
-      if (
-        isTerminalLoggingEnabled(loggingConfig) &&
-        shouldLog(loggingConfig.terminal.level, log.level)
-      ) {
-        const logger = terminalLogger();
-        logger.log(log);
-      }
-
       // Only add to web UI logs if web UI logging is enabled
       if (
         isWebUiLoggingEnabled(loggingConfig) &&
@@ -178,13 +162,7 @@ export const useLogs = (): UseLogsReturn => {
         updateStats(log);
       }
     },
-    [
-      updateStats,
-      saveLogsToStorage,
-      loggingConfig,
-      terminalLogger,
-      isLoggingEnabled,
-    ]
+    [updateStats, saveLogsToStorage, loggingConfig, isLoggingEnabled]
   );
 
   const normalizeLogMessage = (input: string): string => {
@@ -384,7 +362,6 @@ export const useLogs = (): UseLogsReturn => {
 
   const updateLoggingConfig = useCallback(
     (newConfig: LoggingConfig) => {
-      const oldConfig = loggingConfig;
       setLoggingConfig(newConfig);
       // Enable logging when configuration is updated
       setIsLoggingEnabled(true);

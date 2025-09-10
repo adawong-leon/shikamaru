@@ -3,11 +3,9 @@ import { LogEntry, LogStats, LogFilters } from "../types";
 import { LogIndexer, FilterOptions } from "../utils/LogIndexer";
 import { LogCompressor, CompressedLogData } from "../utils/LogCompressor";
 import { useDebounce, useThrottle } from "./usePerformance";
-import { TerminalLogger } from "../services/TerminalLogger";
 import {
   LoggingConfig,
   loadLoggingConfig,
-  isTerminalLoggingEnabled,
   isWebUiLoggingEnabled,
   shouldLog,
 } from "../config/logging";
@@ -36,14 +34,6 @@ export interface UseOptimizedLogsReturn {
     renderTime: number;
   };
 }
-
-const createErrorLog = (errorMessage: string): LogEntry => ({
-  id: `error-${Date.now()}`,
-  serviceName: "system",
-  timestamp: new Date().toISOString(),
-  message: `Connection failed: ${errorMessage}. Make sure ProcessExpressAPI is running on port 3015.`,
-  level: "error",
-});
 
 export const useOptimizedLogs = (): UseOptimizedLogsReturn => {
   // Initialize logging configuration
@@ -80,11 +70,6 @@ export const useOptimizedLogs = (): UseOptimizedLogsReturn => {
         enableDeduplication: true,
       }),
     []
-  );
-
-  const terminalLogger = useCallback(
-    () => new TerminalLogger(loggingConfig),
-    [loggingConfig]
   );
 
   // Initialize logs with compression support
@@ -228,15 +213,6 @@ export const useOptimizedLogs = (): UseOptimizedLogsReturn => {
 
       renderStartTime.current = performance.now();
 
-      // Check if we should log to terminal
-      if (
-        isTerminalLoggingEnabled(loggingConfig) &&
-        shouldLog(loggingConfig.terminal.level, log.level)
-      ) {
-        const logger = terminalLogger();
-        logger.log(log);
-      }
-
       // Only add to web UI logs if web UI logging is enabled
       if (
         isWebUiLoggingEnabled(loggingConfig) &&
@@ -266,7 +242,6 @@ export const useOptimizedLogs = (): UseOptimizedLogsReturn => {
       debouncedSaveLogs,
       throttledIndexUpdate,
       loggingConfig,
-      terminalLogger,
       isLoggingEnabled,
     ]
   );
@@ -346,15 +321,9 @@ export const useOptimizedLogs = (): UseOptimizedLogsReturn => {
       console.error("❌ Failed to clear localStorage:", error);
     }
 
-    // Clear terminal logs if enabled
-    if (isTerminalLoggingEnabled(loggingConfig)) {
-      const logger = terminalLogger();
-      logger.clear();
-    }
-
     // Force update performance stats
     updatePerformanceStats();
-  }, [loggingConfig, terminalLogger, logIndexer, updatePerformanceStats]);
+  }, [loggingConfig, logIndexer, updatePerformanceStats]);
 
   // Advanced filtering
   const getFilteredLogs = useCallback(
@@ -694,7 +663,7 @@ export const useOptimizedLogs = (): UseOptimizedLogsReturn => {
           } else {
             info[key] = { exists: false };
           }
-        } catch (e) {
+        } catch (e: any) {
           info[key] = { exists: false, error: e.message };
         }
       });
