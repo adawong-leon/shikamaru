@@ -26,6 +26,9 @@ export interface Profile {
     skipInstall: boolean;
     cloudProviders?: string[];
 
+    // Step 2.1: Environment generation
+    useExistingEnvFiles?: boolean;
+
     // Step 3: Execution Modes
     unifiedConfig: UnifiedExecutionConfig;
 
@@ -95,6 +98,7 @@ export class ProfileManager {
           skipCloud: oldProfile.skipCloud || false,
           skipInstall: oldProfile.skipInstall || false,
           cloudProviders: oldProfile.cloudProviders,
+          useExistingEnvFiles: oldProfile.useExistingEnvFiles || false,
           unifiedConfig: oldProfile.unifiedConfig,
           loggingConfig: oldProfile.unifiedConfig.loggingConfig || {
             mode: "terminal",
@@ -157,6 +161,7 @@ export class ProfileManager {
         skipCloud: oldProfile.skipCloud || false,
         skipInstall: oldProfile.skipInstall || false,
         cloudProviders: oldProfile.cloudProviders,
+        useExistingEnvFiles: oldProfile.useExistingEnvFiles || false,
         unifiedConfig,
         loggingConfig: { mode: "terminal" }, // Default logging config
         portReusePreference: oldProfile.portReusePreference || true,
@@ -268,7 +273,8 @@ export class ProfileManager {
     unifiedConfig: UnifiedExecutionConfig,
     cloudProviders?: string[],
     loggingConfig?: LoggingConfig,
-    portReusePreference?: boolean
+    portReusePreference?: boolean,
+    useExistingEnvFiles?: boolean
   ): Promise<void> {
     const profiles = this.loadProfiles();
 
@@ -288,6 +294,7 @@ export class ProfileManager {
         skipCloud,
         skipInstall,
         cloudProviders,
+        useExistingEnvFiles: useExistingEnvFiles || false,
         unifiedConfig,
         loggingConfig: loggingConfig || { mode: "terminal" },
         portReusePreference: portReusePreference ?? true, // Default to true for new profiles
@@ -349,7 +356,8 @@ export class ProfileManager {
     unifiedConfig: UnifiedExecutionConfig,
     cloudProviders?: string[],
     loggingConfig?: LoggingConfig,
-    portReusePreference?: boolean
+    portReusePreference?: boolean,
+    useExistingEnvFiles?: boolean
   ): Promise<void> {
     const { shouldSave } = await inquirer.prompt([
       {
@@ -376,7 +384,8 @@ export class ProfileManager {
       unifiedConfig,
       cloudProviders,
       loggingConfig,
-      portReusePreference
+      portReusePreference,
+      useExistingEnvFiles
     );
   }
 

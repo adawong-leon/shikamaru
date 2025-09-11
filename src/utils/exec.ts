@@ -32,18 +32,9 @@ export function execWithSudo(
   command: string,
   options: any = {}
 ): Buffer | string {
-  const needsSudo = requiresSudo(command);
-  const hasSudo = checkSudoAvailability();
-
-  if (needsSudo && hasSudo) {
-    console.log(`🔐 Using sudo for: ${command}`);
-    return execSync(`sudo ${command}`, options);
-  } else if (needsSudo && !hasSudo) {
-    console.warn(`⚠️ Command may require sudo privileges: ${command}`);
-    return execSync(command, options);
-  } else {
-    return execSync(command, options);
-  }
+  // const needsSudo = requiresSudo(command);
+  // const hasSudo = checkSudoAvailability();
+  return execSync(command, options);
 }
 
 export function execWithSudoAsync(
@@ -70,15 +61,12 @@ export function npmInstallWithSudo(
   const needsSudo = requiresSudo(fullCommand);
   const hasSudo = checkSudoAvailability();
 
-  if (needsSudo && hasSudo) {
-    console.log(`🔐 Using sudo for npm install: ${fullCommand}`);
-    return spawnSync("sudo", [command, ...args], {
-      cwd,
-      stdio: "pipe",
-      encoding: "utf8",
-      ...options,
-    });
-  }
+  return spawnSync("sudo", [command, ...args], {
+    cwd,
+    stdio: "pipe",
+    encoding: "utf8",
+    ...options,
+  });
 
   return spawnSync(command, args, {
     cwd,

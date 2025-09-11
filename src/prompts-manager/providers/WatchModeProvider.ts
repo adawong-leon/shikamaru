@@ -15,7 +15,7 @@ export class WatchModeProvider {
   private classificationCache: Map<string, string> = new Map();
 
   constructor() {
-    this.repoClassifier = new RepoClassifier();
+    this.repoClassifier = RepoClassifier.getInstance();
   }
 
   private async getStartCommand(

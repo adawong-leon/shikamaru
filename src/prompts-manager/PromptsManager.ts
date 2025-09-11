@@ -22,6 +22,7 @@ import type {
   RepoInfo,
 } from "./types";
 import { UnifiedConfig } from "../config/UnifiedConfig";
+import { RepoClassifier } from "../env-manager/classifiers/RepoClassifier";
 
 export interface PromptsManagerConfig {
   projectsDir: string;
@@ -165,30 +166,118 @@ export class PromptsManager {
     }
   }
 
-  async promptForCloudOptions() {
+  async promptForCloudOptions(selectedRepos?: RepoSelection) {
     const inquirer = await import("inquirer");
 
-    const { skipCloud, skipInstall } = await inquirer.default.prompt([
-      {
-        type: "confirm",
-        name: "skipCloud",
-        message: "Skip cloud environment setup?",
-        default: false,
-      },
-      {
-        type: "confirm",
-        name: "skipInstall",
-        message: "Skip dependency installation (npm install)?",
-        default: false,
-      },
-    ]);
+    const { skipEnvGeneration, skipCloud, skipInstall } =
+      await inquirer.default.prompt([
+        {
+          type: "confirm",
+          name: "skipEnvGeneration",
+          message:
+            "Skip environment generation? (Use if you already have .env files or run DB yourself)",
+          default: false,
+        },
+        {
+          type: "confirm",
+          name: "skipCloud",
+          message: "Skip cloud environment setup?",
+          default: false,
+          when: (answers: any) => !answers.skipEnvGeneration,
+        },
+        {
+          type: "confirm",
+          name: "skipInstall",
+          message: "Skip dependency installation (npm install)?",
+          default: false,
+        },
+      ]);
+
+    // If user chose to skip cloud but relevant global env files are missing for selected repo types, warn and offer to exit
+    if (!skipEnvGeneration && skipCloud) {
+      try {
+        const globalEnvPath = path.resolve(
+          this.config.projectsDir,
+          "global.env"
+        );
+        const globalFrontendEnvPath = path.resolve(
+          this.config.projectsDir,
+          "global.frontend.env"
+        );
+
+        const backendGlobalExists = fs.existsSync(globalEnvPath);
+        const frontendGlobalExists = fs.existsSync(globalFrontendEnvPath);
+
+        // Determine which types of repos are selected
+        let needsBackendGlobals = false;
+        let needsFrontendGlobals = false;
+
+        if (selectedRepos && selectedRepos.length > 0) {
+          const classifier = RepoClassifier.getInstance();
+          await Promise.all(
+            selectedRepos.map(async (repo) => {
+              try {
+                const repoPath = path.join(this.config.projectsDir, repo);
+                const c = await classifier.classify(repoPath);
+                if (c.type === "back") needsBackendGlobals = true;
+                if (c.type === "front") needsFrontendGlobals = true;
+              } catch {
+                // ignore classification errors here
+              }
+            })
+          );
+        }
+
+        // Build list of missing files relevant to selected repo types
+        const missingParts: string[] = [];
+        if (needsBackendGlobals && !backendGlobalExists)
+          missingParts.push("global.env");
+        if (needsFrontendGlobals && !frontendGlobalExists)
+          missingParts.push("global.frontend.env");
+
+        if (missingParts.length > 0) {
+          console.log(
+            chalk.yellow(
+              `⚠️ Required globals missing for selected repos: ${missingParts.join(
+                ", "
+              )}. Skipping cloud can result in empty .env files.`
+            )
+          );
+
+          const { exitNow } = await inquirer.default.prompt([
+            {
+              type: "confirm",
+              name: "exitNow",
+              message:
+                "Exit now to configure cloud instead or fill global.env and global.frontend.env? (Recommended to avoid empty env)",
+              default: true,
+            },
+          ]);
+
+          if (exitNow) {
+            console.log(
+              chalk.red(
+                "Exiting as requested. Configure cloud and rerun the CLI."
+              )
+            );
+            process.exit(0);
+          }
+        }
+      } catch (e) {
+        // Non-fatal; continue flow if any check fails
+      }
+    }
 
     // Cloud provider selection removed; default to Azure when not skipped
-    const cloudProviders: string[] | undefined = skipCloud
-      ? undefined
-      : ["azure"];
+    const cloudProviders: string[] | undefined =
+      skipEnvGeneration || skipCloud ? undefined : ["azure"];
 
-    return { skipCloud, skipInstall, cloudProviders };
+    return {
+      skipEnvGeneration,
+      skipCloud,
+      skipInstall,
+      cloudProviders,
+    };
   }
 
   async promptForPortReusePreference(): Promise<{
@@ -1128,6 +1217,7 @@ export class PromptsManager {
     unifiedConfig: UnifiedConfig;
     loggingConfig: LoggingConfig;
     portReusePreference: boolean;
+    useExistingEnvFiles?: boolean;
   } {
     try {
       const { promptSteps } = profile;
@@ -1142,6 +1232,7 @@ export class PromptsManager {
         cloudProviders = [],
         loggingConfig = { mode: "terminal" },
         portReusePreference = true,
+        useExistingEnvFiles = false,
       } = promptSteps;
 
       // Apply profile -> UnifiedConfig singleton
@@ -1153,6 +1244,9 @@ export class PromptsManager {
         loggingConfig,
       });
 
+      // Apply useExistingEnvFiles preference which lives outside unifiedConfig
+      config.setUseExistingEnvFiles(Boolean(useExistingEnvFiles));
+
       console.log(chalk.green(`✅ Loaded profile: ${profile.name}`));
 
       return {
@@ -1163,6 +1257,7 @@ export class PromptsManager {
         unifiedConfig: config,
         loggingConfig,
         portReusePreference,
+        useExistingEnvFiles,
       };
     } catch (error) {
       console.error(chalk.red(`❌ Failed to load profile: ${profile?.name}`));
@@ -1179,6 +1274,7 @@ export class PromptsManager {
     unifiedConfig: UnifiedConfig;
     loggingConfig: LoggingConfig;
     portReusePreference: boolean;
+    skipEnvGeneration?: boolean;
   } | null> {
     if (!this.profileManager) {
       return null;
@@ -1198,7 +1294,26 @@ export class PromptsManager {
       }
 
       // Load the specified profile directly
-      return this.loadProfileConfiguration(profile);
+      const loaded = this.loadProfileConfiguration(profile);
+
+      // Ask whether to skip env generation for this run
+      try {
+        const inquirer = await import("inquirer");
+        const { skipEnvGeneration } = await inquirer.default.prompt([
+          {
+            type: "confirm",
+            name: "skipEnvGeneration",
+            message:
+              "Skip environment generation for this run? (use if .env already present and you manage DB self-managed by yourself or running generated  docker compose yourself )",
+            default: UnifiedConfig.getInstance().getSkipEnvGeneration(),
+          },
+        ]);
+        const cfg = UnifiedConfig.getInstance();
+        cfg.setSkipEnvGeneration(Boolean(skipEnvGeneration));
+        return { ...loaded, skipEnvGeneration };
+      } catch {
+        return loaded;
+      }
     }
 
     const action = await this.profileManager.promptForProfileAction();
@@ -1210,7 +1325,25 @@ export class PromptsManager {
         if (!profile) break; // user cancelled → fall through to normal flow
 
         try {
-          return this.loadProfileConfiguration(profile);
+          const loaded = this.loadProfileConfiguration(profile);
+          // Ask whether to skip env generation for this run
+          try {
+            const inquirer = await import("inquirer");
+            const { skipEnvGeneration } = await inquirer.default.prompt([
+              {
+                type: "confirm",
+                name: "skipEnvGeneration",
+                message:
+                  "Skip env generation for this run? (use if .env already present and you manage DB self-managed, the tool won't start dbs in docker , just selected repo in docker)",
+                default: UnifiedConfig.getInstance().getSkipEnvGeneration(),
+              },
+            ]);
+            const cfg = UnifiedConfig.getInstance();
+            cfg.setSkipEnvGeneration(Boolean(skipEnvGeneration));
+            return { ...loaded, skipEnvGeneration } as any;
+          } catch {
+            return loaded;
+          }
         } catch (err) {
           console.error(
             chalk.red(`Failed to load profile: ${(err as Error).message}`)
@@ -1284,8 +1417,8 @@ export class PromptsManager {
   private async runNormalFlow() {
     try {
       const repos = await this.selectRepos();
-      const { skipCloud, skipInstall, cloudProviders } =
-        await this.promptForCloudOptions();
+      const { skipEnvGeneration, skipCloud, skipInstall, cloudProviders } =
+        await this.promptForCloudOptions(repos);
 
       // Add execution mode selection
       const { unifiedConfig } = await this.promptForRepoExecutionModes(
@@ -1294,8 +1427,12 @@ export class PromptsManager {
         skipCloud
       );
 
-      // Add port reuse preference
-      const { portReusePreference } = await this.promptForPortReusePreference();
+      // Add port reuse preference (skip if using existing env files)
+      let portReusePreference: boolean | undefined = true;
+      if (!skipEnvGeneration) {
+        const res = await this.promptForPortReusePreference();
+        portReusePreference = res.portReusePreference;
+      }
 
       // Add logging choice
       const { loggingMode } = await this.promptForLoggingChoice();
@@ -1305,8 +1442,9 @@ export class PromptsManager {
 
       // Set basic properties
       config.setProjectsDir(this.config.projectsDir);
-      config.setSkipAzure(skipCloud);
+      config.setSkipAzure(skipCloud || false);
       config.setSkipInstall(skipInstall);
+      config.setSkipEnvGeneration(Boolean(skipEnvGeneration));
 
       // Set execution mode properties from unifiedConfig
       config.setGlobalMode(unifiedConfig.globalMode);
@@ -1330,7 +1468,8 @@ export class PromptsManager {
           unifiedConfig,
           cloudProviders,
           { mode: loggingMode },
-          portReusePreference
+          portReusePreference,
+          skipEnvGeneration
         );
       }
 
@@ -1338,6 +1477,10 @@ export class PromptsManager {
         repos,
         unifiedConfig: config,
         portReusePreference,
+        skipEnvGeneration,
+        skipCloud,
+        skipInstall,
+        cloudProviders,
       };
     } catch (error) {
       throw new PromptsError(

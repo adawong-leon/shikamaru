@@ -105,7 +105,9 @@ export class DockerComposeManager {
               dockerfile: "Dockerfile",
             },
             ports: ports,
-            depends_on: Array.from(getEnvManagerState().internalServices),
+            depends_on: Array.from(
+              (getEnvManagerState()?.internalServices as any) || []
+            ),
             networks: ["devnet3"],
           };
 

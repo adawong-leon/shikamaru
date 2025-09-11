@@ -106,6 +106,10 @@ export class UnifiedConfig {
   // Azure and cloud settings
   public skipAzure?: boolean;
 
+  // Environment generation settings
+  public useExistingEnvFiles?: boolean;
+  public skipEnvGeneration?: boolean;
+
   // Repository configurations
   public repoConfigs: RepoConfig[];
 
@@ -146,6 +150,8 @@ export class UnifiedConfig {
     this.globalStartupCommand = options.globalStartupCommand;
     this.skipInstall = options.skipInstall || false;
     this.skipAzure = options.skipAzure || false;
+    this.useExistingEnvFiles = options.useExistingEnvFiles || false;
+    this.skipEnvGeneration = options.skipEnvGeneration || false;
     this.repoConfigs = options.repoConfigs || [];
     this.loggingConfig = options.loggingConfig || { mode: "terminal" };
     this.enableHealthCheck = options.enableHealthCheck ?? true;
@@ -223,6 +229,24 @@ export class UnifiedConfig {
 
   setSkipAzure(skip: boolean): void {
     this.skipAzure = skip;
+  }
+
+  // Use Existing Env Files
+  getUseExistingEnvFiles(): boolean {
+    return this.useExistingEnvFiles || false;
+  }
+
+  setUseExistingEnvFiles(useExisting: boolean): void {
+    this.useExistingEnvFiles = useExisting;
+  }
+
+  // Skip Env Generation (e.g., user runs DB themselves)
+  getSkipEnvGeneration(): boolean {
+    return this.skipEnvGeneration || false;
+  }
+
+  setSkipEnvGeneration(skip: boolean): void {
+    this.skipEnvGeneration = skip;
   }
 
   // Repository Configurations
@@ -637,6 +661,8 @@ export class UnifiedConfig {
     this.setGlobalStartupCommand(undefined);
     this.setSkipInstall(false);
     this.setSkipAzure(false);
+    this.setUseExistingEnvFiles(false);
+    this.setSkipEnvGeneration(false);
     this.setRepoConfigs([]);
     this.setLoggingConfig({ mode: "terminal" });
     this.setEnableHealthCheck(true);
@@ -663,6 +689,8 @@ export class UnifiedConfig {
       globalStartupCommand: this.getGlobalStartupCommand(),
       skipInstall: this.getSkipInstall(),
       skipAzure: this.getSkipAzure(),
+      useExistingEnvFiles: this.getUseExistingEnvFiles(),
+      skipEnvGeneration: this.getSkipEnvGeneration(),
       repoConfigs: [...this.getRepoConfigs()],
       loggingConfig: this.getLoggingConfig()
         ? { ...this.getLoggingConfig()! }
@@ -721,6 +749,8 @@ export class UnifiedConfig {
       globalStartupCommand: this.getGlobalStartupCommand(),
       skipInstall: this.getSkipInstall(),
       skipAzure: this.getSkipAzure(),
+      useExistingEnvFiles: this.getUseExistingEnvFiles(),
+      skipEnvGeneration: this.getSkipEnvGeneration(),
       repoConfigs: this.getRepoConfigs(),
       loggingConfig: this.getLoggingConfig(),
       enableHealthCheck: this.getEnableHealthCheck(),

@@ -39,13 +39,20 @@ export class StartCommand {
       this.logger.info("Repository Selection");
       const result = await this.selectRepositoriesAndMode();
 
-      // Step 3: Load or generate ports (using the selected mode)
-      this.logger.info("Port Configuration");
-      await this.configurePorts(
-        result.repos,
-        result.unifiedConfig.getGlobalMode(),
-        result.portReusePreference
-      );
+      // Step 3: Load or generate ports (skip if using existing env files)
+      if (result.unifiedConfig.getUseExistingEnvFiles()) {
+        this.logger.info("Port Configuration");
+        this.logger.info(
+          "🔌 Using existing .env files, skipping port reuse and assignment"
+        );
+      } else {
+        this.logger.info("Port Configuration");
+        await this.configurePorts(
+          result.repos,
+          result.unifiedConfig.getGlobalMode(),
+          result.portReusePreference
+        );
+      }
 
       // Step 4: Handle logging configuration
       this.logger.info("Logging Configuration");

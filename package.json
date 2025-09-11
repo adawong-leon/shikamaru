@@ -18,7 +18,7 @@
     "build:react": "npm --prefix src/react-log-viewer run build",
     "build": " npm run clean && npm run build:react && tsc && tsc-alias && npm run copy:assets && chmod +x dist/bin/shikamaru.js",
     "start": "export NODE_ENV=production && node dist/index.js",
-    "dev": "ts-node -r tsconfig-paths/register src/index.ts",
+    "dev": "export NODE_ENV=development && ts-node -r tsconfig-paths/register src/index.ts",
     "watch:build": "concurrently \"tsc -w\" \"tsc-alias -w\"",
     "watch:start": "nodemon dist/index.js",
     "watch": "npm-run-all --parallel watch:build watch:start",

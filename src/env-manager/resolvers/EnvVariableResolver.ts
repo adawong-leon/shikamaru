@@ -20,14 +20,9 @@ const dbKeywords = [
   "redis",
   "rabbitmq",
   "mq",
-  "host",
-  "port",
-  "username",
-  "password",
-  "database",
-  "connection_url",
-  "protocol",
 ];
+
+const serviceKeywords = ["api", "api_url", "url"];
 
 export class EnvVariableResolver {
   constructor(private readonly ports: PortsMap) {}
@@ -147,7 +142,10 @@ export class EnvVariableResolver {
     }
 
     // Handle service URLs (backend only)
-    if (!dbKeywords.some((keyword) => key.toLowerCase().includes(keyword))) {
+    if (
+      serviceKeywords.some((keyword) => key.toLowerCase().includes(keyword)) &&
+      !dbKeywords.some((keyword) => key.toLowerCase().includes(keyword))
+    ) {
       const serviceUrl = this.resolveBackendVariable(key, state);
       if (serviceUrl) {
         return serviceUrl;

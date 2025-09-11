@@ -13,6 +13,13 @@ export type { Tier, RepoType, PortsMap } from "./types";
 export async function initEnv(): Promise<void> {
   try {
     const unifiedConfig = UnifiedConfig.getInstance();
+    // Short-circuit if user chose to use existing env files or to skip env generation
+    if (
+      unifiedConfig.getUseExistingEnvFiles() ||
+      unifiedConfig.getSkipEnvGeneration()
+    ) {
+      return;
+    }
     const repos = unifiedConfig.getRepositoryNames();
     const ports = unifiedConfig.getPortMap();
     const projectsDir = unifiedConfig.getProjectsDir();
@@ -67,7 +74,13 @@ export function createEnvManager(
   });
 }
 export function getEnvManagerState() {
-  return EnvManager.getInstance().getState();
+  try {
+    return EnvManager.getInstance().getState();
+  } catch {
+    return {
+      internalServices: new Set<string>(),
+    } as any;
+  }
 }
 /**
  * Validate environment configuration without generating files.

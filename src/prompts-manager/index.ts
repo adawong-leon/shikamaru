@@ -41,6 +41,7 @@ export async function selectReposAndWatchMode(
   skipInstall?: boolean;
   cloudProviders?: string[];
   portReusePreference?: boolean;
+  useExistingEnvFiles?: boolean;
 }> {
   try {
     const globalConfig = GlobalConfig.getInstance();

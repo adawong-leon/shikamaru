@@ -164,7 +164,7 @@ export class EnvManager {
 
   private getRepoClassifier(): RepoClassifier {
     if (!this.repoClassifier) {
-      this.repoClassifier = new RepoClassifier();
+      this.repoClassifier = RepoClassifier.getInstance();
     }
     return this.repoClassifier;
   }
@@ -480,6 +480,7 @@ export class EnvManager {
       const repoPath = path.resolve(this.config.projectsDir, repo);
       const examplePath = path.resolve(repoPath, ".env.example");
       const envPath = path.resolve(repoPath, ".env");
+      const envPathBackup = path.resolve(repoPath, ".backup.env");
 
       if (!this.getFileWriter().fileExists(examplePath)) {
         this.recordWarning(`No .env.example found for ${repo}`);
@@ -503,6 +504,18 @@ export class EnvManager {
 
       if (this.config.enableValidation) {
         this.validateResolvedContent(resolvedContent, repo);
+      }
+
+      // Backup current .env if it exists before writing a new one
+      try {
+        if (this.getFileWriter().fileExists(envPath)) {
+          const existing = await this.getFileWriter().readFile(envPath);
+          const backupPath = `${envPathBackup}`;
+          await this.getFileWriter().writeFile(backupPath, existing);
+          console.log(`🗂️  Backed up existing .env to ${backupPath}`);
+        }
+      } catch {
+        // Non-fatal: proceed with write even if backup fails
       }
 
       await this.getFileWriter().writeFileAtomic(envPath, resolvedContent);

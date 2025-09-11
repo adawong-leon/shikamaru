@@ -8,7 +8,20 @@ interface ClassifierConstants {
   databasePackages: string[];
 }
 export class RepoClassifier {
+  private static instance: RepoClassifier | null = null;
   private static constants: ClassifierConstants | undefined = undefined;
+  private classificationCache: Map<string, RepoClassification> = new Map();
+  private cacheHits = 0;
+  private cacheMisses = 0;
+
+  private constructor() {}
+
+  static getInstance(): RepoClassifier {
+    if (!RepoClassifier.instance) {
+      RepoClassifier.instance = new RepoClassifier();
+    }
+    return RepoClassifier.instance;
+  }
 
   private static loadConstants(): ClassifierConstants {
     if (this.constants) {
@@ -100,6 +113,13 @@ export class RepoClassifier {
 
   async classify(repoPath: string): Promise<RepoClassification> {
     try {
+      const cacheKey = path.resolve(repoPath);
+      const cached = this.classificationCache.get(cacheKey);
+      if (cached) {
+        this.cacheHits++;
+        return cached;
+      }
+
       const hasBackendConfig = this.hasBackendConfig(repoPath);
       const hasBackendPackages = await this.hasBackendPackages(repoPath);
       const hasDatabasePackages = await this.hasDatabasePackages(repoPath);
@@ -110,8 +130,7 @@ export class RepoClassifier {
         if (hasBackendConfig) reason = "Backend config found";
         else if (hasBackendPackages) reason = "Backend packages found";
         else if (hasDatabasePackages) reason = "Database packages found";
-
-        return {
+        const result: RepoClassification = {
           type: "back",
           confidence: 1.0,
           metadata: {
@@ -121,10 +140,13 @@ export class RepoClassifier {
             reason,
           },
         };
+        this.classificationCache.set(cacheKey, result);
+        this.cacheMisses++;
+        return result;
       }
 
       // Otherwise, it's a frontend
-      return {
+      const result: RepoClassification = {
         type: "front",
         confidence: 1.0,
         metadata: {
@@ -134,6 +156,9 @@ export class RepoClassifier {
           reason: "No backend indicators found",
         },
       };
+      this.classificationCache.set(cacheKey, result);
+      this.cacheMisses++;
+      return result;
     } catch (error) {
       return {
         type: "unknown",
@@ -219,6 +244,20 @@ export class RepoClassifier {
       hasBackendConfig: this.hasBackendConfig(repoPath),
       hasBackendPackages: await this.hasBackendPackages(repoPath),
       hasDatabasePackages: await this.hasDatabasePackages(repoPath),
+    };
+  }
+
+  clearCache(): void {
+    this.classificationCache.clear();
+    this.cacheHits = 0;
+    this.cacheMisses = 0;
+  }
+
+  getCacheStats(): { size: number; hits: number; misses: number } {
+    return {
+      size: this.classificationCache.size,
+      hits: this.cacheHits,
+      misses: this.cacheMisses,
     };
   }
 }

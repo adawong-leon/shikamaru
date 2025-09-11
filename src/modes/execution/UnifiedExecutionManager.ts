@@ -132,17 +132,27 @@ export class UnifiedExecutionManager {
           .join(", ")}`
       );
 
-      // Step 1: Initialize environment
+      // Step 1: Initialize environment (skip if using existing env files)
       this.logger.info("Environment Initialization");
-
-      await initEnv();
-      this.logger.stopProgress(true, "Environment configuration completed");
+      if (
+        this.config.getUseExistingEnvFiles() ||
+        this.config.getSkipEnvGeneration()
+      ) {
+        this.logger.info(
+          "Using existing .env files, skipping environment configuration"
+        );
+      } else {
+        await initEnv();
+        this.logger.stopProgress(true, "Environment configuration completed");
+      }
 
       // Step 2: Detect required infrastructure services (for unified compose)
       this.logger.info("Infrastructure Detection");
 
-      const infraServices = getEnvManagerState().internalServices;
-      result.infraServices = Array.from(getEnvManagerState().internalServices);
+      const infraServices = this.config.getUseExistingEnvFiles()
+        ? new Set<string>()
+        : getEnvManagerState().internalServices;
+      result.infraServices = Array.from(infraServices);
 
       this.logger.stopProgress(true, "Infrastructure detection completed");
 
@@ -636,7 +646,10 @@ export class UnifiedExecutionManager {
     const appProcesses: any[] = [];
 
     // Get infrastructure services from env manager state
-    const infraServices = Array.from(getEnvManagerState().internalServices);
+    const infraServices = Array.from<string>(
+      (getEnvManagerState()?.internalServices as Set<string>) ||
+        new Set<string>()
+    );
 
     // Get ports from the current configuration
     const ports = this.getCurrentPorts();
