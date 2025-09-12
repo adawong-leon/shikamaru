@@ -3,25 +3,31 @@ import {
   CloudProviderConfig,
   EnvResolutionContext,
   CloudProvider,
+  EnvState,
 } from "../types";
 import { AzureCloudProvider } from "./AzureCloudProvider";
 
 export class CloudProviderManager {
   private providers: Map<string, CloudProviderInterface> = new Map();
   private defaultProvider: string | null = null;
+  private state: EnvState;
 
-  constructor() {
-    this.registerDefaultProviders();
+  constructor(state: EnvState) {
+    this.state = state;
   }
 
-  private registerDefaultProviders(): void {
+  registerDefaultProviders(): void {
     // Register Azure provider by default
     const azureProvider = new AzureCloudProvider({
       name: "Azure DevOps",
       type: "azure",
       baseUrl: "https://dev.azure.com",
-      organization: "",
-      project: "",
+      organization: this.state.localBackend.ORG,
+      project: this.state.localBackend.PROJECT,
+      authentication: {
+        type: "pat",
+        value: this.state.localBackend.AZURE_PERSONAL_ACCESS_TOKEN,
+      },
       enabled: true,
     });
     this.registerProvider(azureProvider);
@@ -92,6 +98,27 @@ export class CloudProviderManager {
     }
 
     return allVariables;
+  }
+
+  async getVariablesFromAzureOnly(
+    context: EnvResolutionContext
+  ): Promise<Record<string, string>> {
+    const azureProvider = this.getAzureProvider();
+    if (!azureProvider) {
+      console.warn(
+        `Failed to get variables from Azure provider:`,
+        "pat not found"
+      );
+
+      return {};
+    }
+
+    try {
+      return await azureProvider.getVariables(context);
+    } catch (error) {
+      console.warn(`Failed to get variables from Azure provider:`, error);
+      return {};
+    }
   }
 
   async getVariablesFromProvider(

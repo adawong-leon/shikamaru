@@ -60,20 +60,9 @@ export class AzureCloudProvider extends BaseCloudProvider {
       string
     >;
 
-    const baseUrl =
-      backend.AZURE_BASE_URL || this.config.baseUrl || "https://dev.azure.com";
-    const org =
-      backend.AZURE_ORGANIZATION ||
-      backend.ADO_ORGANIZATION ||
-      backend.AZURE_ORG ||
-      backend.ADO_ORG ||
-      backend.ORG ||
-      this.config.organization;
-    const project =
-      backend.AZURE_PROJECT ||
-      backend.ADO_PROJECT ||
-      backend.PROJECT ||
-      this.config.project;
+    const baseUrl = this.config.baseUrl || "https://dev.azure.com";
+    const org = this.config.organization;
+    const project = this.config.project;
 
     if (!org || !project || !baseUrl) {
       throw new EnvError(

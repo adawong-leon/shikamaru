@@ -94,7 +94,7 @@ export class EnvManager {
     };
 
     // Cloud provider manager manages built-in and custom providers
-    this.cloudProviderManager = new CloudProviderManager();
+    this.cloudProviderManager = new CloudProviderManager(this.state);
 
     if (config.customProviders) {
       this.customProviders = config.customProviders;
@@ -400,6 +400,8 @@ export class EnvManager {
 
   private async loadCloudVariables(): Promise<void> {
     try {
+      this.cloudProviderManager.registerDefaultProviders();
+
       const azureProvider = this.cloudProviderManager.getAzureProvider();
       if (azureProvider && this.state.tier) {
         azureProvider.setTier(this.state.tier);
@@ -409,9 +411,8 @@ export class EnvManager {
       const backGroup = `back-${this.state.tier!.toUpperCase()}`;
 
       this.metrics.cloudCalls += 2;
-
       const [frontVars, backVars] = await Promise.allSettled([
-        this.cloudProviderManager.getVariablesFromAllProviders({
+        this.cloudProviderManager.getVariablesFromAzureOnly({
           repo: "frontend",
           classification: { type: "front", confidence: 1 },
           tier: this.state.tier!,
@@ -419,7 +420,7 @@ export class EnvManager {
           cloudVars: {},
           localConfig: this.state.localConfig || {},
         }),
-        this.cloudProviderManager.getVariablesFromAllProviders({
+        this.cloudProviderManager.getVariablesFromAzureOnly({
           repo: "backend",
           classification: { type: "back", confidence: 1 },
           tier: this.state.tier!,
