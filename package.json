@@ -1,6 +1,6 @@
 {
   "name": "shikamaru",
-  "version": "1.0.0-beta.5",
+  "version": "1.0.0-beta.7",
   "description": "A powerful CLI tool for managing multi-repository development environments with intelligent environment configuration, port management, and Docker integration",
   "main": "dist/index.js",
   "bin": {

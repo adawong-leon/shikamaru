@@ -3,6 +3,8 @@ import path from "path";
 import { RepoClassification } from "../types";
 
 interface ClassifierConstants {
+  frontendIndicators: string[];
+  frontendPackages: string[];
   backendIndicators: string[];
   backendPackages: string[];
   databasePackages: string[];
@@ -34,7 +36,114 @@ export class RepoClassifier {
         "classifier-constants.json"
       );
       const constantsData = fs.readFileSync(constantsPath, "utf-8");
-      this.constants = JSON.parse(constantsData);
+      const parsed = JSON.parse(constantsData);
+      // Ensure required keys exist even if the JSON file predates these fields
+      this.constants = {
+        frontendIndicators: parsed.frontendIndicators ?? [
+          "vite.config.ts",
+          "vite.config.js",
+          "vite.config.mts",
+          "vite.config.mjs",
+          "next.config.js",
+          "next.config.ts",
+          "nuxt.config.js",
+          "nuxt.config.ts",
+          "angular.json",
+          "webpack.config.js",
+          "webpack.config.ts",
+          "svelte.config.js",
+          "svelte.config.ts",
+          "astro.config.mjs",
+          "astro.config.ts",
+          "remix.config.js",
+          "remix.config.ts",
+        ],
+        frontendPackages: parsed.frontendPackages ?? [
+          "react",
+          "react-dom",
+          "next",
+          "vue",
+          "nuxt",
+          "@angular/core",
+          "@angular/cli",
+          "svelte",
+          "@sveltejs/kit",
+          "vite",
+          "webpack",
+          "parcel",
+          "rollup",
+          "astro",
+          "remix",
+          "solid-js",
+          "preact",
+        ],
+        backendIndicators: parsed.backendIndicators ?? [
+          "nest-cli.json",
+          "nest.json",
+        ],
+        backendPackages: parsed.backendPackages ?? [
+          "@nestjs/core",
+          "@nestjs/common",
+          "@nestjs/platform-express",
+          "@nestjs/typeorm",
+          "@nestjs/mongoose",
+          "@nestjs/passport",
+          "@nestjs/jwt",
+          "@nestjs/config",
+          "@nestjs/swagger",
+          "@nestjs/terminus",
+          "@nestjs/bull",
+          "@nestjs/bull-board",
+          "@nestjs/schedule",
+          "@nestjs/microservices",
+          "nestjs",
+        ],
+        databasePackages: parsed.databasePackages ?? [
+          "mysql2",
+          "mysql",
+          "pg",
+          "postgres",
+          "postgresql",
+          "sqlite3",
+          "better-sqlite3",
+          "mariadb",
+          "oracledb",
+          "mssql",
+          "tedious",
+          "sql.js",
+          "typeorm",
+          "sequelize",
+          "prisma",
+          "knex",
+          "objection",
+          "bookshelf",
+          "waterline",
+          "doctrine",
+          "drizzle-orm",
+          "mongoose",
+          "mongodb",
+          "redis",
+          "ioredis",
+          "memcached",
+          "cassandra-driver",
+          "couchbase",
+          "dynamodb",
+          "firebase-admin",
+          "firebase",
+          "amqplib",
+          "rabbitmq",
+          "kafka-node",
+          "kafkajs",
+          "bull",
+          "bull-board",
+          "agenda",
+          "bee-queue",
+          "db-migrate",
+          "umzug",
+          "migrate-mongo",
+          "knex-migrator",
+        ],
+      };
       return this.constants!;
     } catch (error) {
       console.warn(
@@ -43,6 +152,44 @@ export class RepoClassifier {
       );
       // Fallback to default constants
       this.constants = {
+        frontendIndicators: [
+          "vite.config.ts",
+          "vite.config.js",
+          "vite.config.mts",
+          "vite.config.mjs",
+          "next.config.js",
+          "next.config.ts",
+          "nuxt.config.js",
+          "nuxt.config.ts",
+          "angular.json",
+          "webpack.config.js",
+          "webpack.config.ts",
+          "svelte.config.js",
+          "svelte.config.ts",
+          "astro.config.mjs",
+          "astro.config.ts",
+          "remix.config.js",
+          "remix.config.ts",
+        ],
+        frontendPackages: [
+          "react",
+          "react-dom",
+          "next",
+          "vue",
+          "nuxt",
+          "@angular/core",
+          "@angular/cli",
+          "svelte",
+          "@sveltejs/kit",
+          "vite",
+          "webpack",
+          "parcel",
+          "rollup",
+          "astro",
+          "remix",
+          "solid-js",
+          "preact",
+        ],
         backendIndicators: ["nest-cli.json", "nest.json"],
         backendPackages: [
           "@nestjs/core",
@@ -120,51 +267,73 @@ export class RepoClassifier {
         return cached;
       }
 
-      const hasBackendConfig = this.hasBackendConfig(repoPath);
-      const hasBackendPackages = await this.hasBackendPackages(repoPath);
-      const hasDatabasePackages = await this.hasDatabasePackages(repoPath);
+      const hasFrontendConfig = this.hasFrontendConfig(repoPath);
+      const hasFrontendPackages = await this.hasFrontendPackages(repoPath);
 
-      // If it has backend config, backend packages, or database packages, it's a backend
-      if (hasBackendConfig || hasBackendPackages || hasDatabasePackages) {
-        let reason = "";
-        if (hasBackendConfig) reason = "Backend config found";
-        else if (hasBackendPackages) reason = "Backend packages found";
-        else if (hasDatabasePackages) reason = "Database packages found";
+      // Front has priority if any frontend indicators are found
+      if (hasFrontendConfig || hasFrontendPackages) {
+        const result: RepoClassification = {
+          type: "front",
+          confidence: 1.0,
+          metadata: {
+            hasFrontendConfig,
+            hasFrontendPackages,
+            reason: hasFrontendConfig
+              ? "Frontend config found"
+              : "Frontend packages found",
+          } as any,
+        } as RepoClassification;
+        this.classificationCache.set(cacheKey, result);
+        this.cacheMisses++;
+        return result;
+      } else {
         const result: RepoClassification = {
           type: "back",
           confidence: 1.0,
           metadata: {
-            hasBackendConfig,
-            hasBackendPackages,
-            hasDatabasePackages,
-            reason,
-          },
-        };
+            hasFrontendConfig,
+            hasFrontendPackages,
+            reason: "No frontend indicators found",
+          } as any,
+        } as RepoClassification;
         this.classificationCache.set(cacheKey, result);
         this.cacheMisses++;
         return result;
       }
-
-      // Otherwise, it's a frontend
-      const result: RepoClassification = {
-        type: "front",
-        confidence: 1.0,
-        metadata: {
-          hasBackendConfig,
-          hasBackendPackages,
-          hasDatabasePackages,
-          reason: "No backend indicators found",
-        },
-      };
-      this.classificationCache.set(cacheKey, result);
-      this.cacheMisses++;
-      return result;
     } catch (error) {
       return {
         type: "unknown",
         confidence: 0,
         metadata: { error: String(error) },
       };
+    }
+  }
+
+  private hasFrontendConfig(repoPath: string): boolean {
+    const constants = RepoClassifier.loadConstants();
+    return constants.frontendIndicators.some((indicator) =>
+      this.fileExists(repoPath, indicator)
+    );
+  }
+
+  private async hasFrontendPackages(repoPath: string): Promise<boolean> {
+    const packageJsonPath = path.join(repoPath, "package.json");
+
+    if (!this.fileExists(repoPath, "package.json")) {
+      return false;
+    }
+
+    try {
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+      const dependencies = {
+        ...packageJson.dependencies,
+        ...packageJson.devDependencies,
+      };
+
+      const constants = RepoClassifier.loadConstants();
+      return constants.frontendPackages.some((pkg) => dependencies[pkg]);
+    } catch (error) {
+      return false;
     }
   }
 
@@ -223,28 +392,6 @@ export class RepoClassifier {
     } catch {
       return false;
     }
-  }
-
-  private directoryExists(repoPath: string, dirname: string): boolean {
-    try {
-      const fullPath = path.join(repoPath, dirname);
-      return fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory();
-    } catch {
-      return false;
-    }
-  }
-
-  // Public method to get classification details for debugging
-  async getClassificationDetails(
-    repoPath: string
-  ): Promise<Record<string, any>> {
-    const classification = await this.classify(repoPath);
-    return {
-      classification,
-      hasBackendConfig: this.hasBackendConfig(repoPath),
-      hasBackendPackages: await this.hasBackendPackages(repoPath),
-      hasDatabasePackages: await this.hasDatabasePackages(repoPath),
-    };
   }
 
   clearCache(): void {
